@@ -1,7 +1,10 @@
-import os
-import re
+import os, re, logging, coloredlogs
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from google import genai
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s - %(message)s')
+
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 INPUT_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'input_images')
@@ -91,8 +94,10 @@ def resize_and_center(image, orientation):
 
 def process_input_images():
     """Processes all images in the input folder by watermarking, resizing, generating captions, saving with clean filenames, and removing originals."""
+    logger.info("Processing input images...")
     for filename in os.listdir(INPUT_FOLDER):
         if filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            logger.info(f"Processing file: {filename}")
             input_path = os.path.join(INPUT_FOLDER, filename)
             try:
                 with Image.open(input_path) as img:
@@ -113,8 +118,10 @@ def process_input_images():
                     output_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
                     img.save(output_path, format='JPEG', quality=95)
+                    logger.info(f"Saved processed image as: {output_filename}")
 
                 os.remove(input_path)
+                logger.info(f"Deleted original file: {filename}")
 
             except Exception as e:
-                print(e)
+                logger.error(f"Failed to process {filename}: {e}")

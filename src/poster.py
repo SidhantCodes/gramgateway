@@ -1,6 +1,9 @@
-import os
-import glob
+import os, glob, logging
 from instagrapi import Client
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s - %(message)s')
+
 
 OUTPUT_FOLDER = 'pics'
 POSTED_LIST_FILE = 'pics.txt'
