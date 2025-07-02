@@ -11,10 +11,8 @@ from src.dm import send_dm_all
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger)
 
-# USERNAME = os.getenv("IG_USERNAME")
-USERNAME = "nothuman11140"
-# PASSWORD = os.getenv("IG_PASSWORD")
-PASSWORD = "Nexa@insta0110"
+USERNAME = os.getenv("IG_USERNAME")
+PASSWORD = os.getenv("IG_PASSWORD")
 
 
 def login_to_instagram():
