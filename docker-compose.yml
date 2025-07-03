@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  gramgateway:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - IG_USERNAME=${IG_USERNAME}
+      - IG_PASSWORD=${IG_PASSWORD}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    volumes:
+      - ./input_images:/app/input_images
+      - ./pics:/app/pics
+      - ./session.json:/app/session.json
+    restart: unless-stopped

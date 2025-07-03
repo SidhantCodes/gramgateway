@@ -1,6 +1,10 @@
 import os, json, logging, uvicorn
 from typing import Dict, Any, Optional
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
@@ -399,10 +403,10 @@ async def instagram_login_handler(params: Dict[str, Any]) -> Dict[str, Any]:
             "message": "Successfully logged in to Instagram",
             "account": {
                 "username": user_info.username,
-                "full_name": user_info.full_name,
-                "follower_count": user_info.follower_count,
-                "following_count": user_info.following_count,
-                "media_count": user_info.media_count
+                "full_name": getattr(user_info, 'full_name', 'N/A'),
+                "follower_count": getattr(user_info, 'follower_count', 0),
+                "following_count": getattr(user_info, 'following_count', 0),
+                "media_count": getattr(user_info, 'media_count', 0)
             }
         }
     
@@ -540,10 +544,10 @@ async def instagram_status_handler() -> Dict[str, Any]:
             "message": "Connected to Instagram",
             "account": {
                 "username": user_info.username,
-                "full_name": user_info.full_name,
-                "follower_count": user_info.follower_count,
-                "following_count": user_info.following_count,
-                "media_count": user_info.media_count
+                "full_name": getattr(user_info, 'full_name', 'N/A'),
+                "follower_count": getattr(user_info, 'follower_count', 0),
+                "following_count": getattr(user_info, 'following_count', 0),
+                "media_count": getattr(user_info, 'media_count', 0)
             }
         }
     
@@ -697,10 +701,13 @@ mcp = FastApiMCP(app)
 mcp.mount()
 
 if __name__ == "__main__":
+    # Get port from environment variable (for cloud deployment)
+    port = int(os.getenv("PORT", 8000))
+    
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True,
+        port=port,
+        reload=False,  # Disable reload in production
         log_level="info"
     )
