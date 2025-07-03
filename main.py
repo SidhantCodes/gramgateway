@@ -57,6 +57,9 @@ os.makedirs("fonts", exist_ok=True)
 # Global Instagram client
 instagram_client = None
 
+USERNAME = os.getenv("IG_USERNAME")
+PASSWORD = os.getenv("IG_PASSWORD")
+
 
 
 # Instagram helper functions
