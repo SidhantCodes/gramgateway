@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GramGateway - Instagram Image Processor</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fab fa-instagram"></i> GramGateway</h1>
+            <p>Process images and post to Instagram with AI-powered captions</p>
+            <div class="mt-15">
+                <span class="status-indicator" id="serverStatus"></span>
+                <span id="statusText">Checking server status...</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Navigation Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('upload')">
+                    <i class="fas fa-upload"></i> Upload & Process
+                </button>
+                <button class="tab" onclick="showTab('login')">
+                    <i class="fas fa-sign-in-alt"></i> Instagram Login
+                </button>
+                <button class="tab" onclick="showTab('gallery')">
+                    <i class="fas fa-images"></i> Gallery
+                </button>
+                <button class="tab" onclick="showTab('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+
+            <!-- Upload & Process Tab -->
+            <div id="upload" class="tab-content active">
+                <h3><i class="fas fa-magic"></i> Upload and Process Images</h3>
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label for="imageFile">
+                            <i class="fas fa-image"></i> Select Image
+                        </label>
+                        <div class="file-upload">
+                            <input type="file" id="imageFile" accept="image/*" onchange="previewImage(this)">
+                            <label for="imageFile" class="file-upload-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Click to upload image or drag & drop</span>
+                            </label>
+                        </div>
+                        <img id="imagePreview" class="image-preview hidden" alt="Image preview">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="caption">
+                            <i class="fas fa-pen"></i> Caption (optional - AI will generate if empty)
+                        </label>
+                        <textarea id="caption" placeholder="Enter your Instagram caption or leave empty for AI generation..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" onclick="processImage()">
+                            <i class="fas fa-cogs"></i> Process Image
+                        </button>
+                        <button type="button" class="btn btn-success ml-10" onclick="postToInstagram()">
+                            <i class="fab fa-instagram"></i> Post to Instagram
+                        </button>
+                    </div>
+                </form>
+
+                <div class="loading" id="uploadLoading">
+                    <div class="spinner"></div>
+                    <p>Processing your image...</p>
+                </div>
+
+                <div id="uploadResult" class="result hidden"></div>
+            </div>
+
+            <!-- Instagram Login Tab -->
+            <div id="login" class="tab-content">
+                <h3><i class="fas fa-user-lock"></i> Instagram Account Management</h3>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">
+                            <i class="fas fa-user"></i> Username
+                        </label>
+                        <input type="text" id="username" placeholder="Your Instagram username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">
+                            <i class="fas fa-lock"></i> Password
+                        </label>
+                        <input type="password" id="password" placeholder="Your Instagram password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" onclick="login()">
+                            <i class="fas fa-sign-in-alt"></i> Login to Instagram
+                        </button>
+                        <button type="button" class="btn btn-info ml-10" onclick="checkStatus()">
+                            <i class="fas fa-info-circle"></i> Check Status
+                        </button>
+                        <button type="button" class="btn btn-secondary ml-10" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </form>
+
+                <div class="loading" id="loginLoading">
+                    <div class="spinner"></div>
+                    <p>Connecting to Instagram...</p>
+                </div>
+
+                <div id="loginResult" class="result hidden"></div>
+            </div>
+
+            <!-- Gallery Tab -->
+            <div id="gallery" class="tab-content">
+                <h3><i class="fas fa-images"></i> Image Gallery</h3>
+                <div class="quick-actions">
+                    <button class="btn btn-info" onclick="loadProcessedImages()">
+                        <i class="fas fa-folder-open"></i> Load Processed Images
+                    </button>
+                    <button class="btn btn-success" onclick="loadPostedImages()">
+                        <i class="fas fa-check-circle"></i> Load Posted Images
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearGallery()">
+                        <i class="fas fa-trash"></i> Clear Gallery
+                    </button>
+                </div>
+
+                <div class="loading" id="galleryLoading">
+                    <div class="spinner"></div>
+                    <p>Loading images...</p>
+                </div>
+
+                <div id="galleryResult" class="result hidden"></div>
+                <div id="processedImages" class="processed-images"></div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="settings" class="tab-content">
+                <h3><i class="fas fa-cog"></i> Server Settings</h3>
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label for="serverUrl">
+                            <i class="fas fa-server"></i> Server URL
+                        </label>
+                        <input type="url" id="serverUrl" value="http://localhost:8000" placeholder="http://localhost:8000">
+                        <small class="help-text">
+                            Change this if your server is running on a different port or domain
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" onclick="saveSettings()">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                        <button type="button" class="btn btn-info ml-10" onclick="testConnection()">
+                            <i class="fas fa-wifi"></i> Test Connection
+                        </button>
+                    </div>
+                </form>
+
+                <div id="settingsResult" class="result hidden"></div>
+
+                <!-- Server Info -->
+                <div class="about-section">
+                    <h4><i class="fas fa-info-circle"></i> About</h4>
+                    <p class="about-text">
+                        GramGateway v2.0 - AI-powered Instagram image processing and posting tool.
+                        Built with FastAPI and integrated with GitHub Copilot MCP.
+                    </p>
+                    <div class="quick-actions">
+                        <button class="btn btn-info" onclick="openGitHub()">
+                            <i class="fab fa-github"></i> GitHub
+                        </button>
+                        <button class="btn btn-secondary" onclick="showLogs()">
+                            <i class="fas fa-file-alt"></i> Show Logs
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // Global variables
+        let API_BASE = 'http://localhost:8000';
+        let currentProcessedImage = null;
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            checkServerStatus();
+            setupDragAndDrop();
+        });
+
+        // Settings Management
+        function loadSettings() {
+            const savedUrl = localStorage.getItem('serverUrl');
+            if (savedUrl) {
+                API_BASE = savedUrl;
+                document.getElementById('serverUrl').value = savedUrl;
+            }
+        }
+
+        function saveSettings() {
+            const serverUrl = document.getElementById('serverUrl').value.trim();
+            if (serverUrl) {
+                API_BASE = serverUrl;
+                localStorage.setItem('serverUrl', serverUrl);
+                showNotification('Settings saved successfully!', 'success');
+                checkServerStatus();
+            }
+        }
+
+        // Server Status Check
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'healthy') {
+                    document.getElementById('serverStatus').className = 'status-indicator online';
+                    document.getElementById('statusText').textContent = 'Server Online';
+                } else {
+                    throw new Error('Server unhealthy');
+                }
+            } catch (error) {
+                document.getElementById('serverStatus').className = 'status-indicator offline';
+                document.getElementById('statusText').textContent = 'Server Offline';
+            }
+        }
+
+        async function testConnection() {
+            showLoading('settingsResult', true);
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                showResult('settingsResult', JSON.stringify(data, null, 2), 'success');
+                checkServerStatus();
+            } catch (error) {
+                showResult('settingsResult', `Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.closest('.tab').classList.add('active');
+        }
+
+        // Image Upload and Preview
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Drag and Drop Setup
+        function setupDragAndDrop() {
+            const uploadLabel = document.querySelector('.file-upload-label');
+            
+            uploadLabel.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.background = 'rgba(64, 93, 230, 0.2)';
+            });
+
+            uploadLabel.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.background = 'rgba(64, 93, 230, 0.05)';
+            });
+
+            uploadLabel.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.background = 'rgba(64, 93, 230, 0.05)';
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    document.getElementById('imageFile').files = files;
+                    previewImage(document.getElementById('imageFile'));
+                }
+            });
+        }
+
+        // Image Processing
+        async function processImage() {
+            const fileInput = document.getElementById('imageFile');
+            const captionInput = document.getElementById('caption');
+
+            if (!fileInput.files[0]) {
+                showNotification('Please select an image first!', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            showLoading('uploadLoading', true);
+            hideResult('uploadResult');
+
+            try {
+                // First upload the image
+                const uploadResponse = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const uploadResult = await uploadResponse.json();
+                
+                // Then process the uploaded image
+                const processData = {
+                    filename: uploadResult.filename,
+                    custom_caption: captionInput.value.trim() || undefined
+                };
+
+                const processResponse = await fetch(`${API_BASE}/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(processData)
+                });
+
+                const result = await processResponse.json();
+                
+                if (processResponse.ok) {
+                    currentProcessedImage = result;
+                    showResult('uploadResult', JSON.stringify(result, null, 2), 'success');
+                    showNotification('Image processed successfully!', 'success');
+                    
+                    // Auto-fill caption if generated
+                    if (result.caption && !captionInput.value.trim()) {
+                        captionInput.value = result.caption;
+                    }
+                } else {
+                    throw new Error(result.detail || 'Processing failed');
+                }
+            } catch (error) {
+                showResult('uploadResult', `Error: ${error.message}`, 'error');
+                showNotification('Image processing failed!', 'error');
+            } finally {
+                showLoading('uploadLoading', false);
+            }
+        }
+
+        // Instagram Posting
+        async function postToInstagram() {
+            if (!currentProcessedImage) {
+                showNotification('Please process an image first!', 'error');
+                return;
+            }
+
+            showLoading('uploadLoading', true);
+
+            try {
+                const response = await fetch(`${API_BASE}/instagram/post`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: currentProcessedImage.processed_filename,
+                        custom_caption: document.getElementById('caption').value.trim()
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult('uploadResult', JSON.stringify(result, null, 2), 'success');
+                    showNotification('Posted to Instagram successfully!', 'success');
+                } else {
+                    throw new Error(result.detail || 'Posting failed');
+                }
+            } catch (error) {
+                showResult('uploadResult', `Error: ${error.message}`, 'error');
+                showNotification('Instagram posting failed!', 'error');
+            } finally {
+                showLoading('uploadLoading', false);
+            }
+        }
+
+        // Instagram Login
+        async function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!username || !password) {
+                showNotification('Please enter both username and password!', 'error');
+                return;
+            }
+
+            showLoading('loginLoading', true);
+            hideResult('loginResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/instagram/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult('loginResult', JSON.stringify(result, null, 2), 'success');
+                    showNotification('Logged in successfully!', 'success');
+                    
+                    // Clear password for security
+                    document.getElementById('password').value = '';
+                } else {
+                    throw new Error(result.detail || 'Login failed');
+                }
+            } catch (error) {
+                showResult('loginResult', `Error: ${error.message}`, 'error');
+                showNotification('Login failed!', 'error');
+            } finally {
+                showLoading('loginLoading', false);
+            }
+        }
+
+        async function checkStatus() {
+            showLoading('loginLoading', true);
+            hideResult('loginResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/instagram/status`);
+                const result = await response.json();
+                showResult('loginResult', JSON.stringify(result, null, 2), response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResult('loginResult', `Error: ${error.message}`, 'error');
+            } finally {
+                showLoading('loginLoading', false);
+            }
+        }
+
+        async function logout() {
+            showLoading('loginLoading', true);
+            hideResult('loginResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/instagram/logout`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                showResult('loginResult', JSON.stringify(result, null, 2), 'success');
+                showNotification('Logged out successfully!', 'success');
+            } catch (error) {
+                showResult('loginResult', `Error: ${error.message}`, 'error');
+            } finally {
+                showLoading('loginLoading', false);
+            }
+        }
+
+        // Gallery Functions
+        async function loadProcessedImages() {
+            showLoading('galleryLoading', true);
+            hideResult('galleryResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/images/processed`);
+                const result = await response.json();
+                
+                showResult('galleryResult', JSON.stringify(result, null, 2), 'success');
+                
+                // Display images in gallery
+                const gallery = document.getElementById('processedImages');
+                gallery.innerHTML = '';
+                
+                if (result.processed_images && result.processed_images.length > 0) {
+                    result.processed_images.forEach(img => {
+                        const imgElement = document.createElement('img');
+                        imgElement.src = `${API_BASE}/download/${img.filename}`;
+                        imgElement.alt = img.filename;
+                        imgElement.title = `${img.filename} - Created: ${img.created}`;
+                        gallery.appendChild(imgElement);
+                    });
+                }
+            } catch (error) {
+                showResult('galleryResult', `Error: ${error.message}`, 'error');
+            } finally {
+                showLoading('galleryLoading', false);
+            }
+        }
+
+        async function loadPostedImages() {
+            showLoading('galleryLoading', true);
+            hideResult('galleryResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/images/posted`);
+                const result = await response.json();
+                showResult('galleryResult', JSON.stringify(result, null, 2), 'success');
+            } catch (error) {
+                showResult('galleryResult', `Error: ${error.message}`, 'error');
+            } finally {
+                showLoading('galleryLoading', false);
+            }
+        }
+
+        function clearGallery() {
+            document.getElementById('processedImages').innerHTML = '';
+            hideResult('galleryResult');
+            showNotification('Gallery cleared!', 'info');
+        }
+
+        // Utility Functions
+        function showLoading(elementId, show) {
+            const element = document.getElementById(elementId);
+            if (show) {
+                element.classList.add('show');
+            } else {
+                element.classList.remove('show');
+            }
+        }
+
+        function showResult(elementId, content, type = '') {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = `result ${type}`;
+            element.classList.remove('hidden');
+        }
+
+        function hideResult(elementId) {
+            const element = document.getElementById(elementId);
+            element.classList.add('hidden');
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Additional Features
+        function openGitHub() {
+            window.open('https://github.com/yourusername/gramgateway', '_blank');
+        }
+
+        function showLogs() {
+            showResult('settingsResult', 'Logs feature coming soon...', 'info');
+        }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        showTab('upload');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        showTab('login');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        showTab('gallery');
+                        break;
+                    case '4':
+                        e.preventDefault();
+                        showTab('settings');
+                        break;
+                }
+            }
+        });
+
+        // Auto-refresh server status every 30 seconds
+        setInterval(checkServerStatus, 30000);
+    </script>
+</body>
+</html>

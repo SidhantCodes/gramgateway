@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mcp import FastApiMCP
 
@@ -53,10 +54,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Ensure directories exist
 os.makedirs("input_images", exist_ok=True)
 os.makedirs("pics", exist_ok=True)
 os.makedirs("fonts", exist_ok=True)
+os.makedirs("static", exist_ok=True)
 
 # Global Instagram client
 instagram_client = None
@@ -675,12 +680,21 @@ async def health_check():
         "version": "1.0.0"
     }
 
+@app.get("/frontend")
+async def serve_frontend():
+    """Serve the frontend HTML"""
+    file_path = "frontend_v2.html"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Frontend file not found")
+    return FileResponse(file_path, media_type="text/html")
+
 @app.get("/")
 async def root():
     """Root endpoint with API information"""
     return {
         "message": "MCP Image Processing & Instagram Server",
         "version": "1.0.0",
+        "frontend": "/frontend - Web interface for image processing",
         "endpoints": {
             "mcp": "/mcp - Main MCP protocol endpoint",
             "upload": "/upload - Upload images",
