@@ -20,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-app-gradient min-h-screen`}>
+      <body className={`${inter.className} bg-[#FFF0DD] min-h-screen`}>
         {children}
         <Toaster 
           position="top-right"
