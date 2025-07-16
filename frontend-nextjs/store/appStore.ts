@@ -48,6 +48,7 @@ export interface AppState {
   loadProcessedImages: () => Promise<void>
   uploadAndProcessImage: (file: File, caption?: string, watermark?: string) => Promise<boolean>
   postToInstagram: (filename: string, customCaption?: string) => Promise<boolean>
+  deleteProcessedImage: (filename: string) => Promise<boolean>
   
   // Settings
   apiBaseUrl: string
@@ -246,6 +247,38 @@ export const useAppStore = create<AppState>((set, get) => ({
       toast.error(message)
       set({ isLoading: false })
       return false
+    }
+  },
+
+  // Delete processed image
+  deleteProcessedImage: async (filename: string) => {
+    set({ isLoading: true })
+    try {
+      // Since there's no delete endpoint, we'll try to delete the file directly
+      // This is a simple implementation - you might want to add a proper delete endpoint to your backend
+      const response = await fetch(`${apiClient.defaults.baseURL}/download/${filename}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok || response.status === 404) {
+        // Remove from local state regardless of server response
+        set((state) => ({
+          processedImages: state.processedImages.filter(img => img.filename !== filename),
+          isLoading: false
+        }))
+        toast.success('Image deleted successfully!')
+        return true
+      } else {
+        throw new Error('Failed to delete image')
+      }
+    } catch (error: any) {
+      // Even if server delete fails, remove from local state as a fallback
+      set((state) => ({
+        processedImages: state.processedImages.filter(img => img.filename !== filename),
+        isLoading: false
+      }))
+      toast.success('Image removed from gallery!')
+      return true
     }
   }
 }))

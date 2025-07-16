@@ -11,6 +11,7 @@ export default function UploadSection() {
   const [preview, setPreview] = useState<string | null>(null)
   const [caption, setCaption] = useState('')
   const [watermark, setWatermark] = useState('©PnC')
+  const [fileError, setFileError] = useState<string | null>(null)
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -33,14 +34,30 @@ export default function UploadSection() {
   }, [])
 
   const handleFileSelect = (file: File) => {
-    if (file.type.startsWith('image/')) {
-      setSelectedFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setPreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+    setFileError(null)
+    
+    // Check file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      setFileError('File size must be less than 10MB')
+      return
     }
+    
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setFileError('Please select a valid image file (JPEG, PNG, GIF, or WebP)')
+      return
+    }
+    
+    setSelectedFile(file)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setPreview(e.target?.result as string)
+    }
+    reader.onerror = () => {
+      setFileError('Error reading file')
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSubmit = async () => {
@@ -93,13 +110,19 @@ export default function UploadSection() {
                   <input
                     type="file"
                     className="hidden"
-                    accept="image/*"
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                     onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
                   />
                 </label>
               </p>
-              <p className="text-sm text-gray-500">PNG, JPG, JPEG up to 10MB</p>
+              <p className="text-sm text-gray-500">PNG, JPG, JPEG, GIF, WebP up to 10MB</p>
             </div>
+          </div>
+        )}
+        
+        {fileError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{fileError}</p>
           </div>
         )}
       </div>

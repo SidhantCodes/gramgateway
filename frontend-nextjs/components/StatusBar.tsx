@@ -14,16 +14,16 @@ export default function StatusBar() {
   }
 
   return (
-    <div className={`rounded-xl p-6 mb-6 border-l-4 ${
+    <div className={`rounded-xl p-6 mb-6 border-2 ${
       serverStatus.online && instagramStatus.loggedIn 
-        ? 'bg-green-50 border-green-500' 
-        : 'bg-red-50 border-red-500'
+        ? 'bg-green-50 border-green-400' 
+        : 'bg-red-50 border-red-400'
     }`}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-800">System Status</h3>
         <button
           onClick={handleRefresh}
-          className="flex items-center gap-2 px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#EE2D49] hover:bg-[#d41e3a] text-white transition-all duration-200 transform hover:scale-105 shadow-md hover:shadow-lg"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
